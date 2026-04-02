@@ -1,4 +1,4 @@
-# SkillSwap Platform
+# SkillSwap Platform - Python Django Version
 
 A peer-to-peer skill exchange platform where users offer skills they have and request skills they want to learn — completely free, no money involved.
 
@@ -12,6 +12,18 @@ A peer-to-peer skill exchange platform where users offer skills they have and re
 - **Profile Management** — Manage your bio, skills offered, skills wanted, and availability
 - **Notifications** — Real-time notification system for swap activity
 - **Admin Panel** — Secure admin dashboard for managing users and platform stats
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML + Tailwind CSS + React (via CDN) |
+| Backend | Python Django + Django REST Framework |
+| Database | SQLite (for simplicity) |
+| Authentication | JWT (PyJWT) + bcrypt |
+| Development | Simple JavaScript (no TypeScript) |
 
 ---
 
@@ -30,62 +42,54 @@ A peer-to-peer skill exchange platform where users offer skills they have and re
 
 Make sure the following are installed on your PC:
 
-- **Node.js** v20 or higher — https://nodejs.org
-- **pnpm** v9 or higher — install via: `npm install -g pnpm`
-- **PostgreSQL** v14 or higher — https://www.postgresql.org/download/
+- **Python** 3.8 or higher — https://www.python.org
+- **pip** (usually comes with Python)
 
 ---
 
-### Step 1 — Clone the repository
+### Step 1 — Navigate to the backend directory
 
 ```bash
-git clone <your-repo-url>
-cd skillswap
+cd backend
 ```
 
 ---
 
-### Step 2 — Install dependencies
+### Step 2 — Create a virtual environment
 
 ```bash
-pnpm install
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac/Linux
+python3 -m venv venv
+source venv/bin/activate
 ```
 
 ---
 
-### Step 3 — Set up the database
-
-1. Start PostgreSQL and create a new database:
-
-```sql
-CREATE DATABASE skillswap;
-```
-
-2. Create a `.env` file in the project root:
-
-```env
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/skillswap
-JWT_SECRET=your_super_secret_jwt_key_here
-```
-
-Replace `yourpassword` with your PostgreSQL password.
-
----
-
-### Step 4 — Push the database schema
+### Step 3 — Install dependencies
 
 ```bash
-pnpm --filter @workspace/db run push
+pip install -r requirements.txt
 ```
 
-This creates all the necessary tables (`users`, `requests`, `notifications`).
+---
+
+### Step 4 — Set up the database
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
 
 ---
 
 ### Step 5 — Seed the database
 
 ```bash
-pnpm --filter @workspace/scripts run seed
+python seed_database.py
 ```
 
 This creates:
@@ -95,50 +99,57 @@ This creates:
 
 ---
 
-### Step 6 — Start the API server
-
-Open a new terminal window:
+### Step 6 — Start the Django server
 
 ```bash
-PORT=8080 pnpm --filter @workspace/api-server run dev
+python manage.py runserver
 ```
 
-The API will run at `http://localhost:8080`
+The API will run at `http://localhost:8000`
 
 ---
 
-### Step 7 — Start the frontend
+### Step 7 — Open the frontend
 
-Open another terminal window:
+Open another terminal window and navigate to the frontend directory:
 
 ```bash
-PORT=3000 BASE_PATH=/ pnpm --filter @workspace/skillswap run dev
+cd ../frontend
 ```
 
-Open your browser at `http://localhost:3000`
+Then open the `index.html` file in your browser:
+
+```bash
+# If you have a simple HTTP server
+python -m http.server 3000
+
+# Or simply open the file in your browser
+open index.html
+```
+
+Open your browser at `http://localhost:3000` or directly open the `index.html` file.
 
 ---
 
 ## Project Structure
 
 ```
-skillswap/
-├── artifacts/
-│   ├── api-server/          # Express 5 API (auth, users, requests, notifications, admin)
-│   │   └── src/
-│   │       ├── routes/      # API route handlers
-│   │       └── middlewares/ # JWT auth middleware
-│   └── skillswap/           # React + Vite frontend
-│       └── src/
-│           ├── pages/       # Page components (landing, discover, profile, requests, etc.)
-│           ├── components/  # Shared UI components
-│           └── hooks/       # Custom hooks (useAuth)
-├── lib/
-│   ├── db/                  # Drizzle ORM schema + database connection
-│   ├── api-spec/            # OpenAPI spec (openapi.yaml)
-│   └── api-client-react/    # Auto-generated React Query hooks (from OpenAPI)
-└── scripts/
-    └── src/seed.ts          # Database seeder
+skillfinal/
+├── backend/                    # Django backend
+│   ├── skillswap/             # Django project settings
+│   ├── accounts/              # User authentication and profiles
+│   ├── requests/              # Skill swap requests
+│   ├── notifications/         # Notification system
+│   ├── manage.py              # Django management script
+│   ├── requirements.txt       # Python dependencies
+│   └── seed_database.py       # Database seeding script
+├── frontend/                   # Simple HTML/JS frontend
+│   ├── index.html            # Main HTML file
+│   └── js/                   # JavaScript files
+│       ├── api-client.js      # API communication
+│       ├── components.js      # React components
+│       └── app.js            # Main app logic
+└── README.md                  # This file
 ```
 
 ---
@@ -173,27 +184,37 @@ skillswap/
 
 ---
 
-## Tech Stack
+## Key Differences from Original
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| UI Components | shadcn/ui (Radix UI) |
-| State / Data | TanStack Query (React Query) |
-| Backend | Express 5 + TypeScript |
-| Database | PostgreSQL + Drizzle ORM |
-| Authentication | JWT (jsonwebtoken) + bcryptjs |
-| Validation | Zod |
-| API Spec | OpenAPI 3.0 + Orval codegen |
+This simplified version uses:
+
+1. **Python Django** instead of Node.js/Express
+2. **SQLite** instead of PostgreSQL (easier setup)
+3. **Plain JavaScript** instead of TypeScript
+4. **React via CDN** instead of complex build tools
+5. **Simplified API client** without code generation
+6. **Same UI/UX** and all original features
 
 ---
 
 ## Troubleshooting
 
-**Port already in use**: Change the PORT value or kill the process using that port.
+**Port already in use**: Change the port in the `runserver` command: `python manage.py runserver 8080`
 
-**Database connection failed**: Ensure PostgreSQL is running and the `DATABASE_URL` in `.env` is correct.
+**Database connection failed**: Make sure you ran the migrations: `python manage.py migrate`
 
-**Schema not found**: Run `pnpm --filter @workspace/db run push` to create tables.
+**No data showing**: Run the seeder script: `python seed_database.py`
 
-**Login fails**: Run the seed script first to create test accounts.
+**Login fails**: Use the admin accounts or sample users created by the seeder script
+
+**CORS errors**: Make sure the Django server is running and the frontend is accessing the correct API URL
+
+---
+
+## Development Notes
+
+- The backend uses Django with Django REST Framework
+- Authentication is handled via JWT tokens stored in localStorage
+- The frontend uses React loaded from CDN for simplicity
+- No build process required - just open the HTML file
+- Database is SQLite for easy development and deployment

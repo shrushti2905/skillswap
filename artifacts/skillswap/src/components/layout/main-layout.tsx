@@ -4,6 +4,8 @@ import { useLocation } from "wouter";
 import { Navbar } from "./navbar";
 import { Loader2 } from "lucide-react";
 
+const USER_ONLY_PATHS = ["/discover", "/profile", "/requests", "/notifications"];
+
 interface MainLayoutProps {
   children: ReactNode;
   requireAuth?: boolean;
@@ -12,17 +14,26 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, requireAuth = true, requireAdmin = false }: MainLayoutProps) {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (requireAuth && !user) {
-        setLocation("/");
-      } else if (requireAdmin && user?.role !== "admin") {
-        setLocation("/discover");
-      }
+    if (isLoading) return;
+
+    if (requireAuth && !user) {
+      setLocation("/");
+      return;
     }
-  }, [user, isLoading, requireAuth, requireAdmin, setLocation]);
+
+    if (requireAdmin && user?.role !== "admin") {
+      setLocation("/discover");
+      return;
+    }
+
+    // Admins must not access regular user pages
+    if (user?.role === "admin" && USER_ONLY_PATHS.some((p) => location === p)) {
+      setLocation("/admin");
+    }
+  }, [user, isLoading, requireAuth, requireAdmin, location, setLocation]);
 
   if (isLoading) {
     return (
@@ -34,6 +45,9 @@ export function MainLayout({ children, requireAuth = true, requireAdmin = false 
 
   if (requireAuth && !user) return null;
   if (requireAdmin && user?.role !== "admin") return null;
+
+  // Block admin from rendering user-only pages
+  if (user?.role === "admin" && USER_ONLY_PATHS.some((p) => location === p)) return null;
 
   return (
     <div className="min-h-screen flex flex-col">

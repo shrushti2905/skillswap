@@ -558,17 +558,24 @@ const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'user' });
+  
   const load = async () => {
     setLoading(true);
     try {
-      const resp = await window.apiClient.getAdminUsers({ search: query });
+      const resp = await window.apiClient.getAdminUsers({ search: query, page, limit });
       setUsers(resp.users || []);
+      setTotal(resp.total || 0);
     } finally {
       setLoading(false);
     }
   };
-  useEffect(() => { load(); }, []);
+  
+  useEffect(() => { load(); }, [page, limit]);
+  
   const toggleBlock = async (u) => {
     if (u.is_blocked) {
       await window.apiClient.unblockUser(u.id);
@@ -577,73 +584,129 @@ const AdminUsers = () => {
     }
     load();
   };
+  
   const delUser = async (u) => {
-    await window.apiClient.deleteUser(u.id);
-    load();
+    if (confirm(`Delete user ${u.first_name}?`)) {
+      await window.apiClient.deleteUser(u.id);
+      load();
+    }
   };
+  
   const addUser = async () => {
     await window.apiClient.createAdminUser(form);
     setAdding(false);
     setForm({ name: '', email: '', password: '', role: 'user' });
     load();
   };
+  
+  const totalPages = Math.ceil(total / limit);
+  
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       <Section title="Users" right={
         <div className="flex items-center space-x-2">
-          <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search users"
-                 className="px-3 py-2 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-600"/>
-          <button onClick={load} className="px-3 py-2 rounded-lg bg-brand-600 text-white">Search</button>
-          <button onClick={()=>setAdding(true)} className="px-3 py-2 rounded-lg bg-slate-700 text-white">Add User</button>
+          <button onClick={()=>setAdding(true)} className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium transition-colors">
+            + Add User
+          </button>
+          <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search users..."
+                 className="px-4 py-2 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-600 w-64"/>
+          <button onClick={load} className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors">Search</button>
         </div>
       }>
         {adding && (
-          <div className="mb-4 p-4 rounded-xl bg-slate-900/60 border border-slate-700">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="Full name" className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"/>
-              <input value={form.email} onChange={e=>setForm({...form, email:e.target.value})} placeholder="Email" className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"/>
-              <input value={form.password} onChange={e=>setForm({...form, password:e.target.value})} placeholder="Password" type="password" className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100"/>
-              <select value={form.role} onChange={e=>setForm({...form, role:e.target.value})} className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100">
+          <div className="mb-6 p-6 rounded-xl bg-slate-900/60 border border-slate-700">
+            <h3 className="text-lg font-semibold text-white mb-4">Add New User</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="Full name" className="px-4 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:ring-2 focus:ring-brand-600 focus:outline-none"/>
+              <input value={form.email} onChange={e=>setForm({...form, email:e.target.value})} placeholder="Email" className="px-4 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:ring-2 focus:ring-brand-600 focus:outline-none"/>
+              <input value={form.password} onChange={e=>setForm({...form, password:e.target.value})} placeholder="Password" type="password" className="px-4 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:ring-2 focus:ring-brand-600 focus:outline-none"/>
+              <select value={form.role} onChange={e=>setForm({...form, role:e.target.value})} className="px-4 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:ring-2 focus:ring-brand-600 focus:outline-none">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <div className="mt-3 flex space-x-2">
-              <button onClick={addUser} className="px-3 py-2 rounded-lg bg-brand-600 text-white">Create</button>
-              <button onClick={()=>setAdding(false)} className="px-3 py-2 rounded-lg bg-slate-700 text-white">Cancel</button>
+            <div className="mt-4 flex space-x-3">
+              <button onClick={addUser} className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium transition-colors">Create User</button>
+              <button onClick={()=>setAdding(false)} className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors">Cancel</button>
             </div>
           </div>
         )}
         {loading ? <Loading/> : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-slate-400">
-                <tr>
-                  <th className="text-left py-2 pr-3 font-medium">Name</th>
-                  <th className="text-left py-2 pr-3 font-medium">Email</th>
-                  <th className="text-left py-2 pr-3 font-medium">Role</th>
-                  <th className="text-left py-2 pr-3 font-medium">Blocked</th>
-                  <th className="text-left py-2 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-200">
-                {users.map(u => (
-                  <tr key={u.id} className="border-t border-slate-700/70">
-                    <td className="py-2 pr-3">{u.first_name || 'User'}</td>
-                    <td className="py-2 pr-3">{u.email}</td>
-                    <td className="py-2 pr-3">{u.role}</td>
-                    <td className="py-2 pr-3">{u.is_blocked ? 'Yes' : 'No'}</td>
-                    <td className="py-2 space-x-2">
-                      <button onClick={()=>toggleBlock(u)} className={`px-3 py-1 rounded ${u.is_blocked ? 'bg-green-600' : 'bg-yellow-600'} text-white`}>
-                        {u.is_blocked ? 'Unblock' : 'Block'}
-                      </button>
-                      <button onClick={()=>delUser(u)} className="px-3 py-1 rounded bg-red-600 text-white">Delete</button>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="text-slate-400 border-b border-slate-700">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold">User</th>
+                    <th className="text-left py-3 px-4 font-semibold">Email</th>
+                    <th className="text-center py-3 px-4 font-semibold">Role</th>
+                    <th className="text-center py-3 px-4 font-semibold">Status</th>
+                    <th className="text-center py-3 px-4 font-semibold">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="text-slate-200">
+                  {users.map(u => (
+                    <tr key={u.id} className="border-t border-slate-700/50 hover:bg-slate-800/30 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-sm">
+                            {u.first_name?.[0] || 'U'}
+                          </div>
+                          <span className="font-medium">{u.first_name || 'User'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-slate-300">{u.email}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700 text-slate-300'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {u.is_blocked ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">🔴 Blocked</span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">🟢 Active</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button onClick={()=>toggleBlock(u)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${u.is_blocked ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-yellow-600 hover:bg-yellow-500 text-white'}`}>
+                            {u.is_blocked ? '✓ Unblock' : '🚫 Block'}
+                          </button>
+                          <button onClick={()=>delUser(u)} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors">
+                            🗑 Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Pagination */}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <span>Show</span>
+                <select value={limit} onChange={e=>setLimit(Number(e.target.value))} className="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-200">
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+                <span>per page</span>
+                <span className="ml-4">Showing {((page-1)*limit)+1}-{Math.min(page*limit, total)} of {total}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  Previous
+                </button>
+                <span className="px-4 py-2 text-slate-300">Page {page} of {totalPages}</span>
+                <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </Section>
     </div>
@@ -652,26 +715,69 @@ const AdminUsers = () => {
 
 const AdminStats = () => {
   const [stats, setStats] = useState(null);
+  const [timeframe, setTimeframe] = useState('7');
+  
   useEffect(() => {
     const load = async () => setStats(await window.apiClient.getAdminStats());
     load();
   }, []);
+  
   if (!stats) return <Loading/>;
+  
+  const blockedUsers = stats.totalUsers - stats.activeUsers;
+  
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Stats Cards - 3 per row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Stat label="Total Users" value={stats.totalUsers} icon={<span>👥</span>} />
         <Stat label="Active Users" value={stats.activeUsers} icon={<span>✅</span>} />
-        <Stat label="Blocked Users" value={stats.blockedUsers} icon={<span>⛔</span>} />
-        <Stat label="Requests" value={stats.totalRequests} icon={<span>🔄</span>} />
-        <Stat label="Pending" value={stats.pendingRequests} icon={<span>⏳</span>} />
-        <Stat label="Completed" value={stats.completedRequests} icon={<span>🏁</span>} />
+        <Stat label="Blocked Users" value={blockedUsers} icon={<span>⛔</span>} />
+        <Stat label="Swap Requests" value={stats.totalRequests} icon={<span>🔄</span>} />
+        <Stat label="Pending Requests" value={stats.pendingRequests} icon={<span>⏳</span>} />
+        <Stat label="Completed Swaps" value={stats.completedRequests} icon={<span>🏁</span>} />
       </div>
-      <Section title="Activity Overview">
-        <div className="grid grid-cols-12 gap-2 h-28 items-end">
-          {Array.from({length: 12}).map((_,i)=>(
-            <div key={i} className="bg-brand-600/40 hover:bg-brand-600/60 transition-colors" style={{height: `${20 + Math.random()*60}%`}}></div>
-          ))}
+      
+      {/* Activity Chart */}
+      <Section title="Activity Overview" right={
+        <select value={timeframe} onChange={e=>setTimeframe(e.target.value)} className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-sm">
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 3 months</option>
+        </select>
+      }>
+        <div className="relative">
+          {/* Y-axis label */}
+          <div className="absolute -left-8 top-0 bottom-0 flex items-center">
+            <span className="text-xs text-slate-500 transform -rotate-90">Activity Count</span>
+          </div>
+          
+          {/* Chart */}
+          <div className="grid grid-cols-12 gap-2 h-48 items-end pl-4">
+            {Array.from({length: 12}).map((_,i)=>{
+              const height = 20 + Math.random()*70;
+              return (
+                <div key={i} className="relative group">
+                  <div 
+                    className="bg-brand-600/40 hover:bg-brand-600/60 transition-all rounded-t cursor-pointer" 
+                    style={{height: `${height}%`}}
+                  >
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Day {i+1}: {Math.floor(height)}
+                    </div>
+                  </div>
+                  {/* X-axis labels */}
+                  <div className="text-xs text-slate-500 text-center mt-2">D{i+1}</div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* X-axis label */}
+          <div className="text-center mt-2">
+            <span className="text-xs text-slate-500">Days</span>
+          </div>
         </div>
       </Section>
     </div>

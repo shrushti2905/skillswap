@@ -22,51 +22,27 @@ class ApiClient {
     }
 
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-        const config = {
+        const res = await fetch(this.baseURL + endpoint, {
             headers: {
                 'Content-Type': 'application/json',
-                ...options.headers,
+                ...(this.token && { Authorization: `Bearer ${this.token}` }),
             },
             ...options,
-        };
+        });
 
-        if (this.token) {
-            config.headers.Authorization = `Bearer ${this.token}`;
-        }
+        let data;
 
         try {
-            const response = await fetch(url, config);
-            
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                try {
-                    const errorPayload = await response.json();
-                    if (errorPayload && typeof errorPayload === 'object') {
-                        // Handle Django validation errors
-                        if (errorPayload.message && typeof errorPayload.message === 'object') {
-                            const errors = Object.entries(errorPayload.message)
-                                .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-                                .join('; ');
-                            errorMessage = errors;
-                        } else {
-                            errorMessage = errorPayload.message || errorPayload.error || JSON.stringify(errorPayload);
-                        }
-                    }
-                } catch (parseError) {
-                    // If JSON parsing fails, use the status text
-                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                }
-                console.error('API Response Error:', response.status, errorMessage);
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('API Error:', error.message || error);
-            throw error;
+            data = await res.json(); // ✅ read ONLY ONCE
+        } catch (e) {
+            data = null;
         }
+
+        if (!res.ok) {
+            throw new Error(data?.detail || 'API request failed');
+        }
+
+        return data;
     }
 
     // Auth endpoints

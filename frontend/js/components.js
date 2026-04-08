@@ -68,7 +68,7 @@ const useAuth = () => {
 };
 
 // Navigation Component
-const Navigation = () => {
+const Navigation = ({ openAuthModal }) => {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -128,8 +128,8 @@ const Navigation = () => {
           <div className="hidden md:flex items-center space-x-1">
             {!user && (
               <>
-                <a href="#login" className="px-3 py-2 rounded-md text-sm font-medium text-slate-200 hover:text-white hover:bg-slate-700/60">Login</a>
-                <a href="#signup" className="ml-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-brand-600 hover:to-brand-700">Sign Up</a>
+                <button onClick={() => openAuthModal('login')} className="px-3 py-2 rounded-md text-sm font-medium text-slate-200 hover:text-white hover:bg-slate-700/60">Login</button>
+                <button onClick={() => openAuthModal('signup')} className="ml-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-brand-600 hover:to-brand-700">Sign Up</button>
               </>
             )}
             {user && !isAdmin && (
@@ -192,8 +192,8 @@ const Navigation = () => {
           <div className="md:hidden py-3 border-t border-slate-800">
             {!user && (
               <div className="space-y-2">
-                <a href="#login" className="block px-3 py-2 rounded-md text-slate-200">Login</a>
-                <a href="#signup" className="block px-3 py-2 rounded-md bg-brand-600 text-white">Sign Up</a>
+                <button onClick={() => openAuthModal('login')} className="block w-full text-left px-3 py-2 rounded-md text-slate-200">Login</button>
+                <button onClick={() => openAuthModal('signup')} className="block w-full text-left px-3 py-2 rounded-md bg-brand-600 text-white">Sign Up</button>
               </div>
             )}
             {user && !isAdmin && (

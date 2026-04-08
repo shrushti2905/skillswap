@@ -1171,7 +1171,7 @@ const App = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100">
-            <Navigation />
+            <Navigation openAuthModal={openAuthModal} />
             {renderView()}
             <AuthModal 
                 isOpen={isAuthModalOpen} 

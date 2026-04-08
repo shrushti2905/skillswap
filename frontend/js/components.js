@@ -141,7 +141,7 @@ const Navigation = ({ openAuthModal }) => {
     <nav className="bg-[#0f172a] backdrop-blur-sm bg-opacity-95 border-b border-gray-800 shadow-md relative z-40">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => window.location.hash = user ? (isAdmin ? '#admin-overview' : '#discover') : '#'}>
+          <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => window.location.hash = user ? (isAdmin ? '#admin-overview' : '#home') : '#'}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform duration-200">SS</div>
             <h1 className="text-xl font-bold text-white tracking-tight">SkillSwap</h1>
           </div>
@@ -154,6 +154,7 @@ const Navigation = ({ openAuthModal }) => {
             )}
             {user && !isAdmin && (
               <>
+                <NavLink href="#home">Home</NavLink>
                 <NavLink href="#discover">Discover</NavLink>
                 <NavLink href="#messages">Messages</NavLink>
                 <NavLink href="#requests">My Swaps</NavLink>
@@ -252,6 +253,7 @@ const Navigation = ({ openAuthModal }) => {
             )}
             {user && !isAdmin && (
               <div className="space-y-2">
+                <a href="#home" className="block px-3 py-2 rounded-md text-slate-200">Home</a>
                 <a href="#discover" className="block px-3 py-2 rounded-md text-slate-200">Discover</a>
                 <a href="#messages" className="block px-3 py-2 rounded-md text-slate-200">Messages</a>
                 <a href="#requests" className="block px-3 py-2 rounded-md text-slate-200">My Swaps</a>
@@ -307,14 +309,14 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
         onClose();
         // Allow time for modal close animation before hash change
         setTimeout(() => {
-            const nextHash = res.user && res.user.role === 'admin' ? 'admin-overview' : 'discover';
+            const nextHash = res.user && res.user.role === 'admin' ? 'admin-overview' : 'home';
             window.location.hash = `#${nextHash}`;
         }, 50);
       } else {
         await signup(name, email, password);
         onClose();
         setTimeout(() => {
-            window.location.hash = '#discover';
+            window.location.hash = '#home';
         }, 50);
       }
     } catch (error) {

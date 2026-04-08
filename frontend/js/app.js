@@ -1,4 +1,5 @@
 // Main App Component
+// Version: 1.0.1 - Premium UI Update
 const { useState, useEffect, useRef } = React;
 const { AuthProvider, Navigation, AuthModal, LandingPage, Loading, useAuth, AdminOverview, AdminUsers, AdminStats } = window.SkillSwapComponents;
 
@@ -538,6 +539,234 @@ const RequestSkeleton = () => (
         </div>
     </div>
 );
+
+// Home Dashboard Page Component
+const HomePage = () => {
+    const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, active: 0 });
+    const [recommendedUsers, setRecommendedUsers] = useState([]);
+    const [recentActivity, setRecentActivity] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
+
+    const loadDashboardData = async () => {
+        try {
+            // Load user stats
+            const requestsResponse = await window.apiClient.getRequests();
+            const requests = requestsResponse.requests || [];
+            
+            setStats({
+                skillsOffered: user.skills_offered?.length || 0,
+                skillsWanted: user.skills_wanted?.length || 0,
+                activeRequests: requests.filter(r => r.status === 'accepted').length,
+                completedSwaps: requests.filter(r => r.status === 'completed').length,
+                rating: user.rating || 0
+            });
+
+            // Load recommended users (users who offer what I want)
+            if (user.skills_wanted && user.skills_wanted.length > 0) {
+                const usersResponse = await window.apiClient.getUsers({ limit: 4 });
+                const allUsers = usersResponse.users || [];
+                const recommended = allUsers.filter(u => 
+                    u.id !== user.id && u.skills_offered?.some(s => user.skills_wanted.includes(s))
+                ).slice(0, 4);
+                setRecommendedUsers(recommended);
+            }
+
+            // Recent activity (last 5 requests)
+            setRecentActivity(requests.slice(0, 5));
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <Loading />;
+
+    return (
+        <div className="min-h-screen bg-[#0b1220] py-8">
+            <div className="max-w-7xl mx-auto px-6">
+                {/* Welcome Banner */}
+                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-8 mb-8 shadow-lg">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {user.first_name || 'User'}! 👋</h1>
+                            <p className="text-purple-100 text-lg mb-3">Find people to exchange skills and grow together.</p>
+                            <span className="inline-block bg-white/20 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm">
+                                💡 Keep your profile updated for better matches
+                            </span>
+                        </div>
+                        <div className="hidden md:block text-6xl opacity-20">🎯</div>
+                    </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                    <div className="bg-[#111827] border border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                        <div className="text-3xl mb-3">📚</div>
+                        <div className="text-3xl font-bold text-white mb-1">{stats.skillsOffered}</div>
+                        <div className="text-sm text-slate-400">Skills Offered</div>
+                    </div>
+                    
+                    <div className="bg-[#111827] border border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                        <div className="text-3xl mb-3">🎓</div>
+                        <div className="text-3xl font-bold text-white mb-1">{stats.skillsWanted}</div>
+                        <div className="text-sm text-slate-400">Skills Wanted</div>
+                    </div>
+                    
+                    <div className="bg-[#111827] border border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                        <div className="text-3xl mb-3">🔄</div>
+                        <div className="text-3xl font-bold text-green-400 mb-1">{stats.activeRequests}</div>
+                        <div className="text-sm text-slate-400">Active Swaps</div>
+                    </div>
+                    
+                    <div className="bg-[#111827] border border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                        <div className="text-3xl mb-3">✅</div>
+                        <div className="text-3xl font-bold text-purple-400 mb-1">{stats.completedSwaps}</div>
+                        <div className="text-sm text-slate-400">Completed</div>
+                    </div>
+                    
+                    <div className="bg-[#111827] border border-gray-700 rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                        <div className="text-3xl mb-3">⭐</div>
+                        <div className="text-3xl font-bold text-yellow-400 mb-1">{stats.rating > 0 ? stats.rating.toFixed(1) : 'New'}</div>
+                        <div className="text-sm text-slate-400">Your Rating</div>
+                    </div>
+                </div>
+
+                {/* Recommended Section */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">✨ Recommended for You</h2>
+                        {recommendedUsers.length > 0 && (
+                            <a href="#discover" className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors duration-200">
+                                See all →
+                            </a>
+                        )}
+                    </div>
+                    
+                    {recommendedUsers.length === 0 ? (
+                        <div className="bg-[#111827] border border-gray-700 rounded-2xl p-12 text-center">
+                            <div className="text-5xl mb-4 opacity-50">🎯</div>
+                            <h3 className="text-lg font-semibold text-white mb-2">No recommendations yet</h3>
+                            <p className="text-slate-400 mb-4">Add more skills to your profile to get personalized matches.</p>
+                            <a href="#profile" className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl hover:brightness-110 hover:scale-105 transition-all duration-200 font-medium shadow-lg shadow-purple-500/30">
+                                Update Profile
+                            </a>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {recommendedUsers.map(userItem => (
+                                <div key={userItem.id} onClick={() => window.location.hash = '#discover'} className="cursor-pointer group bg-[#111827] border border-gray-700 hover:border-purple-500/50 rounded-2xl shadow-md p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10">
+                                    <div className="flex items-center mb-4">
+                                        {userItem.profile_image ? (
+                                            <img src={userItem.profile_image} alt={userItem.first_name} className="w-12 h-12 rounded-xl object-cover border-2 border-gray-700 group-hover:border-purple-500 transition-colors duration-200" />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
+                                                {userItem.first_name?.[0] || 'U'}
+                                            </div>
+                                        )}
+                                        <div className="ml-3">
+                                            <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors duration-200">{userItem.first_name}</h3>
+                                            <p className="text-xs text-slate-400">{userItem.location || 'Unknown'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {userItem.skills_offered?.slice(0, 2).map((skill, idx) => (
+                                            <span key={idx} className="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-1 rounded-full text-xs">
+                                                {skill}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Recent Activity */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-white tracking-tight mb-6">📊 Recent Activity</h2>
+                    
+                    {recentActivity.length === 0 ? (
+                        <div className="bg-[#111827] border border-gray-700 rounded-2xl p-12 text-center">
+                            <div className="text-5xl mb-4 opacity-50">📭</div>
+                            <h3 className="text-lg font-semibold text-white mb-2">No recent activity yet</h3>
+                            <p className="text-slate-400 mb-4">Start swapping skills to see your activity here.</p>
+                            <a href="#discover" className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl hover:brightness-110 hover:scale-105 transition-all duration-200 font-medium shadow-lg shadow-purple-500/30">
+                                Discover People
+                            </a>
+                        </div>
+                    ) : (
+                        <div className="bg-[#111827] border border-gray-700 rounded-2xl divide-y divide-gray-700">
+                            {recentActivity.map(activity => {
+                                const partner = activity.sender.id === user.id ? activity.receiver : activity.sender;
+                                return (
+                                    <div key={activity.id} className="p-5 hover:bg-[#1f2937] transition-colors duration-200">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                                    {partner.first_name?.[0] || 'U'}
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-medium">
+                                                        {activity.status === 'pending' && 'Swap request with '}
+                                                        {activity.status === 'accepted' && 'Active swap with '}
+                                                        {activity.status === 'completed' && 'Completed swap with '}
+                                                        <span className="text-purple-400">{partner.first_name}</span>
+                                                    </p>
+                                                    <p className="text-sm text-slate-400">
+                                                        {activity.skill_offered} ↔ {activity.skill_requested}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                    activity.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                                    activity.status === 'accepted' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                                                    'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                                                }`}>
+                                                    {activity.status}
+                                                </span>
+                                                <span className="text-xs text-slate-500">
+                                                    {new Date(activity.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <a href="#discover" className="bg-[#111827] border border-gray-700 rounded-2xl p-6 hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-200 group">
+                        <div className="text-4xl mb-3">🔍</div>
+                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors">Discover People</h3>
+                        <p className="text-sm text-slate-400">Find skilled individuals to swap knowledge with</p>
+                    </a>
+                    
+                    <a href="#requests" className="bg-[#111827] border border-gray-700 rounded-2xl p-6 hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-200 group">
+                        <div className="text-4xl mb-3">💼</div>
+                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors">My Swaps</h3>
+                        <p className="text-sm text-slate-400">Manage your active and pending swaps</p>
+                    </a>
+                    
+                    <a href="#profile" className="bg-[#111827] border border-gray-700 rounded-2xl p-6 hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-200 group">
+                        <div className="text-4xl mb-3">👤</div>
+                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors">Edit Profile</h3>
+                        <p className="text-sm text-slate-400">Update your skills and information</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // Messages Page Component
 const MessagesPage = () => {
@@ -1228,7 +1457,7 @@ const App = () => {
             // If no hash or invalid hash for logged in users, default to appropriate page
             if (!hash || hash === 'login' || hash === 'signup') {
                 if (user) {
-                    const newHash = user.role === 'admin' ? 'admin-overview' : 'discover';
+                    const newHash = user.role === 'admin' ? 'admin-overview' : 'home';
                     setCurrentView(newHash);
                     if (window.location.hash !== `#${newHash}`) {
                         window.history.replaceState(null, '', `#${newHash}`);
@@ -1278,15 +1507,18 @@ const App = () => {
         }
       }
       switch (currentView) {
+        case 'home':
+          return <HomePage />;
+        case 'discover':
+          return <DiscoverPage />;
         case 'messages':
           return <MessagesPage />;
         case 'requests':
           return <RequestsPage />;
         case 'profile':
           return <ProfilePage />;
-        case 'discover':
         default:
-          return <DiscoverPage />;
+          return <HomePage />;
       }
     };
 

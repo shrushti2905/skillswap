@@ -1,7 +1,13 @@
 // API Client for Django Backend
 class ApiClient {
     constructor() {
-        this.baseURL = 'http://localhost:8000/api';
+        // Auto-detect backend URL
+        const hostname = window.location.hostname;
+        if (hostname === 'skillswap-frontend-bmxn.onrender.com') {
+            this.baseURL = 'https://skillswap-backend-iiz3.onrender.com/api';
+        } else {
+            this.baseURL = 'http://localhost:8000/api';
+        }
         this.token = localStorage.getItem('token');
     }
 

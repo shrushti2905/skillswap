@@ -1748,13 +1748,20 @@ const ProfilePage = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <EmptyState icon="⭐" title="No Reviews Yet" description="Complete swaps to get reviews from your partners." />
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
+                                            <span className="text-4xl opacity-60">⭐</span>
+                                        </div>
+                                        <h4 className="text-lg font-semibold text-white mb-2">No Reviews Yet</h4>
+                                        <p className="text-gray-400 text-sm">Complete swaps to get reviews from your partners.</p>
+                                    </div>
                                 )}
                             </div>
                         </>
                     )}
                 </div>
             </div>
+        </div>
         </div>
     );
 };

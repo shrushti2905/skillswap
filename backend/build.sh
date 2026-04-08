@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -o errexit
 
-pip install -r requirements.txt
-python manage.py collectstatic --no-input
-# Skip migrations for now to test
-# python manage.py migrate
+# Clean old static files to save space
+rm -rf staticfiles/*
+
+# Install dependencies
+pip install -r requirements.txt --no-cache-dir
+
+# Collect static files
+python manage.py collectstatic --no-input --clear
+
+# Run migrations
+python manage.py migrate --no-input

@@ -135,6 +135,7 @@ const Navigation = ({ openAuthModal }) => {
             {user && !isAdmin && (
               <>
                 <NavLink href="#discover">Discover</NavLink>
+                <NavLink href="#messages">Messages</NavLink>
                 <NavLink href="#requests">My Swaps</NavLink>
                 <NavLink href="#profile">Profile</NavLink>
                 
@@ -199,7 +200,8 @@ const Navigation = ({ openAuthModal }) => {
             {user && !isAdmin && (
               <div className="space-y-2">
                 <a href="#discover" className="block px-3 py-2 rounded-md text-slate-200">Discover</a>
-                <a href="#requests" className="block px-3 py-2 rounded-md text-slate-200">My Requests</a>
+                <a href="#messages" className="block px-3 py-2 rounded-md text-slate-200">Messages</a>
+                <a href="#requests" className="block px-3 py-2 rounded-md text-slate-200">My Swaps</a>
                 <a href="#profile" className="block px-3 py-2 rounded-md text-slate-200">Profile</a>
                 <button onClick={logout} className="w-full text-left mt-2 px-3 py-2 rounded-md bg-slate-700 text-white">Sign Out</button>
               </div>

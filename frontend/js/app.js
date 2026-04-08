@@ -424,7 +424,7 @@ const ReviewModal = ({ isOpen, onClose, partnerName, onSubmit }) => {
 };
 
 // Chat Panel
-const ChatPanel = ({ isOpen, onClose, request, currentUser }) => {
+const ChatPanel = ({ isOpen, onClose, request, currentUser, embedded = false }) => {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -465,16 +465,22 @@ const ChatPanel = ({ isOpen, onClose, request, currentUser }) => {
 
     const partner = request.sender.id === currentUser.id ? request.receiver : request.sender;
 
+    const containerClass = embedded 
+        ? "bg-slate-900/50 border border-slate-800 rounded-2xl flex flex-col h-[600px]"
+        : "fixed inset-y-0 right-0 w-full md:w-96 bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300";
+
     return (
-        <div className="fixed inset-y-0 right-0 w-full md:w-96 bg-slate-800 border-l border-slate-700 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className={containerClass}>
             <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
                 <h3 className="font-bold text-white flex items-center gap-2">
                     <span className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-sm">{partner.first_name?.[0]}</span>
                     Chat with {partner.first_name}
                 </h3>
-                <button onClick={onClose} className="text-slate-400 hover:text-white">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                {!embedded && (
+                    <button onClick={onClose} className="text-slate-400 hover:text-white">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                )}
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 ? (
@@ -526,6 +532,103 @@ const RequestSkeleton = () => (
         </div>
     </div>
 );
+
+// Messages Page Component
+const MessagesPage = () => {
+    const [activeChats, setActiveChats] = useState([]);
+    const [selectedChat, setSelectedChat] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        loadActiveChats();
+    }, []);
+
+    const loadActiveChats = async () => {
+        try {
+            const data = await window.apiClient.getRequests();
+            // Filter only accepted requests (active chats)
+            const accepted = data.filter(r => r.status === 'accepted');
+            setActiveChats(accepted);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <LoadingSkeleton />;
+
+    return (
+        <div className="min-h-screen bg-slate-950 py-8">
+            <div className="container mx-auto px-4">
+                <h1 className="text-3xl font-bold text-white mb-8">Messages</h1>
+                
+                {activeChats.length === 0 ? (
+                    <EmptyState 
+                        icon="💬" 
+                        title="No Active Chats" 
+                        description="Accept a swap request to start chatting with your swap partner."
+                    />
+                ) : (
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        {/* Chat List */}
+                        <div className="lg:col-span-1 bg-slate-900/50 border border-slate-800 rounded-2xl p-4 space-y-2">
+                            <h2 className="font-semibold text-white mb-4">Active Chats</h2>
+                            {activeChats.map(chat => {
+                                const partner = chat.sender_id === user.id ? chat.receiver : chat.sender;
+                                const isSelected = selectedChat?.id === chat.id;
+                                
+                                return (
+                                    <button
+                                        key={chat.id}
+                                        onClick={() => setSelectedChat(chat)}
+                                        className={`w-full text-left p-4 rounded-xl transition-all ${
+                                            isSelected 
+                                                ? 'bg-brand-600 text-white' 
+                                                : 'bg-slate-800/50 hover:bg-slate-800 text-slate-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold">
+                                                {partner.first_name?.[0] || 'U'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium truncate">{partner.first_name}</div>
+                                                <div className={`text-sm truncate ${isSelected ? 'text-brand-100' : 'text-slate-500'}`}>
+                                                    {chat.skill_offered} ↔ {chat.skill_requested}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Chat Panel */}
+                        <div className="lg:col-span-2">
+                            {selectedChat ? (
+                                <ChatPanel
+                                    isOpen={true}
+                                    onClose={() => setSelectedChat(null)}
+                                    request={selectedChat}
+                                    currentUser={user}
+                                    embedded={true}
+                                />
+                            ) : (
+                                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center">
+                                    <div className="text-6xl mb-4">💬</div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">Select a Chat</h3>
+                                    <p className="text-slate-400">Choose a conversation from the list to start messaging</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 // Requests Page Component
 const RequestsPage = () => {
@@ -1159,6 +1262,8 @@ const App = () => {
         }
       }
       switch (currentView) {
+        case 'messages':
+          return <MessagesPage />;
         case 'requests':
           return <RequestsPage />;
         case 'profile':

@@ -382,6 +382,7 @@ const DiscoverPage = () => {
                 userItem={detailModal.user}
                 onSwapRequest={(u) => { setDetailModal({ open: false, user: null }); setRequestModal({ open: true, user: u }); }}
             />
+            </div>
         </div>
     );
 };

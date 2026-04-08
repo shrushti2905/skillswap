@@ -46,9 +46,8 @@ class LoginSerializer(serializers.Serializer):
         
         try:
             user = User.objects.get(email=email)
-            # Check password using Django's built-in check_password
-            from django.contrib.auth import authenticate
-            authenticated_user = authenticate(username=email, password=password)
+            # Authenticate using username (not email)
+            authenticated_user = authenticate(username=user.username, password=password)
             
             if authenticated_user:
                 if user.is_blocked:

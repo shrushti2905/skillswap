@@ -9,9 +9,7 @@ def list_notifications(request):
     notifications = Notification.objects.filter(user=request.user)
     serializer = NotificationSerializer(notifications, many=True)
     
-    return Response({
-        'notifications': serializer.data
-    })
+    return Response(serializer.data)
 
 @api_view(['PUT'])
 def mark_notification_read(request, id):
